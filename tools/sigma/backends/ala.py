@@ -236,10 +236,10 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
             return "(" + self.generateORNode(
                     [(key, v) for v in value]
                     ) + ")"
-        elif key == "EventID":            # EventIDs are not reflected in condition but in table selection
+        elif key.lower() in ['eventid', 'event_id']:            # EventIDs are not reflected in condition but in table selection
             if self.service == "sysmon":
                 self.table = "SysmonEvent"
-                self.eventid = value
+                self.eventid = str(value)
             elif self.service == "powershell":
                 self.table = "Event"
             elif self.service == "security":
@@ -265,7 +265,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
                 elif callable(mapping):
                     return self.generateSubexpressionNode(
                             self.generateANDNode(
-                                [cond for cond in mapping(key, self.cleanValue(value))]
+                                [cond for cond in mapping(key, self.cleanValue(str(value)))]
                                 )
                             )
             elif len(mapping) == 2:
@@ -274,7 +274,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
                     if type(mapitem) == str:
                         result.append(mapitem)
                     elif callable(mapitem):
-                        result.append(mapitem(self.cleanValue(val)))
+                        result.append(mapitem(self.cleanValue(str(val))))
                 return "{} {}".format(*result)
             else:
                 raise TypeError("Backend does not support map values of type " + str(type(value)))
