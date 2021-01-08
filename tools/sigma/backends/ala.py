@@ -155,7 +155,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
             self.table = "SecurityEvent"
         elif self.service and self.service.lower() == "sysmon":
             self.table = "SysmonEvent"
-        elif self.service and self.service.lower() == "powershell":
+        elif self.service and self.service.lower().startswith("powershell"):
             self.table = "Event"
         elif self.service and self.service.lower() == "office365":
             self.table = "OfficeActivity"
