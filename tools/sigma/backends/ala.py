@@ -91,7 +91,9 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
             self._field_map = {}
 
     def cleanValue(self, val):
-        return super().cleanValue(str(val))
+        val = super().cleanValue(str(val))
+        val = re.sub(r'\"', '""', val)
+        return val
 
     def map_sysmon_schema(self, eventid):
         schema_keys = []
@@ -126,7 +128,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
 
             # TODO: There are probably more scenarios we need to account for here...
 
-            return f'matches regex @"{val}"'
+            return f'matches regex @"{self.cleanValue(val)}"'
         except re.error:
             return self.non_regex_value_mapping(val)
 
@@ -142,7 +144,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
 
         val = re.sub(r'(^\*|\*$)', '', val)
 
-        return f'{op} @"{val}"'
+        return f'{op} @"{self.cleanValue(val)}"'
 
 
     def getTable(self, sigmaparser):

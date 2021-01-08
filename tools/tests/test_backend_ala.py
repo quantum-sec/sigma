@@ -69,6 +69,13 @@ def test_typed_node_simple_regex(backend):
     assert result == 'matches regex @".*test.*"'
 
 
+def test_default_value_mapping_escape_quotes(backend):
+    """Should return a simple `contains` KQL condition."""
+    val = 'FOO="BAR"'
+    result = backend.default_value_mapping(val)
+    assert result == '== @"FOO=""BAR"""'
+
+
 def test_typed_node_keywords(backend, sigmaconfig):
     rule = {
         'logsource': {
