@@ -359,8 +359,6 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         return f'* {val}'
 
     def generateNode(self, node):
-        print(node)
-        print(type(node))
         if self._is_keywords_detection == True or self._is_selection_detection == True:
             if type(node) == str:
                 return self.generate_keyword_expression(node)
