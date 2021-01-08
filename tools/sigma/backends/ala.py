@@ -89,6 +89,9 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         else:
             self._field_map = {}
 
+    def cleanValue(self, val):
+        return super().cleanValue(str(val))
+
     def map_sysmon_schema(self, eventid):
         schema_keys = []
         try:
@@ -265,7 +268,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
                 elif callable(mapping):
                     return self.generateSubexpressionNode(
                             self.generateANDNode(
-                                [cond for cond in mapping(key, self.cleanValue(str(value)))]
+                                [cond for cond in mapping(key, self.cleanValue(value))]
                                 )
                             )
             elif len(mapping) == 2:
@@ -274,7 +277,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
                     if type(mapitem) == str:
                         result.append(mapitem)
                     elif callable(mapitem):
-                        result.append(mapitem(self.cleanValue(str(val))))
+                        result.append(mapitem(self.cleanValue(val)))
                 return "{} {}".format(*result)
             else:
                 raise TypeError("Backend does not support map values of type " + str(type(value)))
