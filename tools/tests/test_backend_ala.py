@@ -171,3 +171,70 @@ def test_type_node_keyword_starts_with(backend, sigmaconfig):
     parser = SigmaParser(rule, sigmaconfig)
     result = backend.generate(parser)
     assert result == 'Test | where * endswith @"TEST_KEYWORD"'
+
+
+
+def test_type_node_selection_keyword_only(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test'
+        },
+        'detection': {
+            'selection1': [
+                'TEST_SELECTION_1'
+            ],
+            'selection2': [
+                'TEST_SELECTION_2'
+            ],
+            'condition': 'selection1 and selection2'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where (* contains @"TEST_SELECTION_1" and * contains @"TEST_SELECTION_2")'
+
+
+def test_type_node_selection_kv_only(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test'
+        },
+        'detection': {
+            'selection1': {
+                'TEST_FIELD_1': [
+                    'TEST_SELECTION_1'
+                ]
+            },
+            'selection2': {
+                'TEST_FIELD_2': [
+                    'TEST_SELECTION_2'
+                ]
+            },
+            'condition': 'selection1 and selection2'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where ((TEST_FIELD_1 == @"TEST_SELECTION_1") and (TEST_FIELD_2 == @"TEST_SELECTION_2"))'
+
+
+def test_type_node_selection_mixed(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test'
+        },
+        'detection': {
+            'selection1': [
+                'TEST_SELECTION_1'
+            ],
+            'selection2': {
+                'TEST_FIELD_NAME': [
+                    'TEST_SELECTION_2'
+                ]
+            },
+            'condition': 'selection1 and selection2'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where (* contains @"TEST_SELECTION_1" and (TEST_FIELD_NAME == @"TEST_SELECTION_2"))'

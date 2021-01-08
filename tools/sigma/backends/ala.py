@@ -84,6 +84,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         self._agg_var = None
         self._has_logsource_event_cond = False
         self._is_keywords_detection = False
+        self._is_selection_detection = False
         if not self.sysmon and not self.sigmaconfig.config:
             self._field_map = {}#self._WIN_SECURITY_EVENT_MAP
         else:
@@ -211,8 +212,11 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         if self.table is None:
             self.getTable(sigmaparser)
 
-        if detection['condition'].startswith('keyword'):
+        if 'keywords' in detection.keys() or 'keyword' in detection.keys():
             self._is_keywords_detection = True
+
+        if 'selection1' in detection.keys():
+            self._is_selection_detection = True
 
         return super().generate(sigmaparser)
 
@@ -355,20 +359,13 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         return f'* {val}'
 
     def generateNode(self, node):
-        if self._is_keywords_detection == True and type(node) == str:
-            return self.generate_keyword_expression(node)
+        print(node)
+        print(type(node))
+        if self._is_keywords_detection == True or self._is_selection_detection == True:
+            if type(node) == str:
+                return self.generate_keyword_expression(node)
 
         return super().generateNode(node)
-
-    def generateORNode(self, node):
-        generated = [ self.generateNode(val) for val in node ]
-        filtered = [ g for g in generated if g is not None]
-        if filtered:
-            if self.sort_condition_lists:
-                filtered = sorted(filtered)
-            return self.orToken.join(filtered)
-        else:
-            return None
 
     def _map_conditional_field(self, fieldname):
         mapping = self.sigmaconfig.fieldmappings.get(fieldname)
