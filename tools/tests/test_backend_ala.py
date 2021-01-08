@@ -245,3 +245,21 @@ def test_type_node_selection_mixed(backend, sigmaconfig):
     parser = SigmaParser(rule, sigmaconfig)
     result = backend.generate(parser)
     assert result == 'Test | where (* contains @"TEST_SELECTION_1" and (TEST_FIELD_NAME == @"TEST_SELECTION_2"))'
+
+
+def test_type_node_selection_keyword_list(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test'
+        },
+        'detection': {
+            'selection': [
+                'TEST_SELECTION_1',
+                'TEST_SELECTION_2'
+            ],
+            'condition': 'selection'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where (* contains @"TEST_SELECTION_1" or * contains @"TEST_SELECTION_2")'

@@ -217,7 +217,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         if 'keywords' in detection.keys() or 'keyword' in detection.keys():
             self._is_keywords_detection = True
 
-        if 'selection1' in detection.keys():
+        if len([ k for k in detection.keys() if k.startswith('selection')]) > 0:
             self._is_selection_detection = True
 
         return super().generate(sigmaparser)
