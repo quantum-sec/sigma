@@ -4,6 +4,7 @@ import pytest
 
 from sigma.backends.ala import AzureLogAnalyticsBackend
 from sigma.configuration import SigmaConfiguration
+from sigma.parser.modifiers.type import SigmaRegularExpressionModifier
 
 
 @pytest.fixture()
@@ -23,28 +24,28 @@ def test_default_value_mapping_simple_contains(backend):
     """Should return a simple `contains` KQL condition."""
     val = '*.dll*'
     result = backend.default_value_mapping(val)
-    assert result == 'contains ".dll"'
+    assert result == 'contains @".dll"'
 
 
 def test_default_value_mapping_preserve_slashes(backend):
     """Should preserve slashes in directory paths."""
     val = "*/.git/*"
     result = backend.default_value_mapping(val)
-    assert result == 'contains "/.git/"'
+    assert result == 'contains @"/.git/"'
 
 
 def test_default_value_mapping_starts_with(backend):
     """Should return a simple `startswith` KQL condition."""
     val = 'abc*'
     result = backend.default_value_mapping(val)
-    assert result == 'startswith "abc"'
+    assert result == 'startswith @"abc"'
 
 
 def test_default_value_mapping_ends_with(backend):
     """Should return a simple `endswith` KQL condition."""
     val = '*.env'
     result = backend.default_value_mapping(val)
-    assert result == 'endswith ".env"'
+    assert result == 'endswith @".env"'
 
 
 def test_default_value_mapping_regex_prefix(backend):
@@ -58,4 +59,10 @@ def test_default_value_mapping_simple_equals(backend):
     """Should return a simple `==` KQL condition."""
     val = 'test'
     result = backend.default_value_mapping(val)
-    assert result == '== "test"'
+    assert result == '== @"test"'
+
+
+def test_test(backend):
+    value = SigmaRegularExpressionModifier('.*test.*')
+    result = backend.generateTypedValueNode(value)
+    assert result == 'matches regex @".*test.*"'

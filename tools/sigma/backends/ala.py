@@ -61,7 +61,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
     mapListsSpecialHandling = True
     mapListValueExpression = "%s in %s"
     typedValueExpression = {
-        SigmaRegularExpressionModifier: "matches regex \"(?i)%s\"",
+        SigmaRegularExpressionModifier: 'matches regex @"%s"',
         SigmaContainsModifier: "contains \"%s\""
     }
 
@@ -140,7 +140,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
 
         val = re.sub(r'(^\*|\*$)', '', val)
 
-        return f'{op} "{val}"'
+        return f'{op} @"{val}"'
 
 
     def getTable(self, sigmaparser):
@@ -294,8 +294,6 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
     def generateTypedValueNode(self, node):
         try:
             val = str(node)
-            if "*" in val:
-                val = re.sub('\\*', '.*', val)
             return self.typedValueExpression[type(node)] % (val)
         except KeyError:
             raise NotImplementedError("Type modifier '{}' is not supported by backend".format(node.identifier))
