@@ -83,6 +83,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         self._fields = None
         self._agg_var = None
         self._has_logsource_event_cond = False
+        self._is_keywords_detection = False
         if not self.sysmon and not self.sigmaconfig.config:
             self._field_map = {}#self._WIN_SECURITY_EVENT_MAP
         else:
@@ -204,11 +205,14 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
             self.category = None
             self.product = None
             self.service = None
+
         detection = sigmaparser.parsedyaml.get("detection", {})
-        if "keywords" in detection.keys():
-            return super().generate(sigmaparser)
+
         if self.table is None:
             self.getTable(sigmaparser)
+
+        if detection.get('condition') == 'keywords':
+            self._is_keywords_detection = True
 
         return super().generate(sigmaparser)
 
@@ -333,6 +337,21 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
                 cond=agg.condition,
             )
         )
+
+    def generateORNode(self, node):
+        generated = [ self.generateNode(val) for val in node ]
+        filtered = [ g for g in generated if g is not None]
+
+        if self._is_keywords_detection == True:
+            filtered = [ re.sub(r'["*]+', '*', f) for f in filtered]
+            filtered = [ f'* {self.non_regex_value_mapping(f)}' for f in filtered ]
+
+        if filtered:
+            if self.sort_condition_lists:
+                filtered = sorted(filtered)
+            return self.orToken.join(filtered)
+        else:
+            return None
 
     def _map_conditional_field(self, fieldname):
         mapping = self.sigmaconfig.fieldmappings.get(fieldname)

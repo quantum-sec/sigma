@@ -5,6 +5,7 @@ import pytest
 from sigma.backends.ala import AzureLogAnalyticsBackend
 from sigma.configuration import SigmaConfiguration
 from sigma.parser.modifiers.type import SigmaRegularExpressionModifier
+from sigma.parser.rule import SigmaParser
 
 
 @pytest.fixture()
@@ -62,7 +63,25 @@ def test_default_value_mapping_simple_equals(backend):
     assert result == '== @"test"'
 
 
-def test_test(backend):
+def test_typed_node_simple_regex(backend):
     value = SigmaRegularExpressionModifier('.*test.*')
     result = backend.generateTypedValueNode(value)
     assert result == 'matches regex @".*test.*"'
+
+
+def test_typed_node_keywords(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test',
+        },
+        'detection': {
+            'keywords': [
+                '*TEST_KEYWORD_1*',
+                'TEST_KEYWORD_2'
+            ],
+            'condition': 'keywords'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where (* contains @"TEST_KEYWORD_1" or * contains @"TEST_KEYWORD_2")'
