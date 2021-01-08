@@ -118,6 +118,10 @@ test-merge:
 	tests/test-merge.sh
 	! $(COVERAGE) run -a --include=$(COVSCOPE) tools/merge_sigma tests/not_existing.yml > /dev/null
 
+test-backend-ala:
+	cd tools && python3 setup.py install
+	cd tools && $(COVERAGE) run -m pytest tests/test_backend_ala.py
+
 test-backend-es-qs:
 	tests/test-backend-es-qs.py
 

@@ -48,7 +48,6 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
     )
     config_required = False
 
-    reEscape = re.compile('(\\\|"|(?<!)(?![*?]))')
     andToken = " and "
     orToken = " or "
     notToken = "not "
@@ -89,6 +88,9 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         else:
             self._field_map = {}
 
+    def cleanValue(self, val):
+        return super().cleanValue(str(val))
+
     def map_sysmon_schema(self, eventid):
         schema_keys = []
         try:
@@ -106,32 +108,40 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         return parse_arg
 
     def default_value_mapping(self, val):
-        op = "=="
-        if isinstance(val, str):
-            if "*" in val[1:-1]:  # value contains * inside string - use regex match
-                op = "matches regex"
-                val = re.sub('(\\\\\*|\*)', '.*', val)
-                if "\\" in val:
-                    val = "@'(?i)%s'" % (val)
-                else:
-                    val = "'(?i)%s'" % (val)
-                return "%s %s" % (op, self.cleanValue(val))
-            elif val.startswith("*") or val.endswith("*"):
-                if val.startswith("*") and val.endswith("*"):
-                    op = "contains"
-                elif val.startswith("*"):
-                    op = "endswith"
-                elif val.endswith("*"):
-                    op = "startswith"
-                val = re.sub('([".^$]|(?![*?]))', '\g<1>', val)
-                val = re.sub('(\\\\\*|\*)', '.*', val)
-                val = re.sub('\\?', '.', val)
-                if "\\" in val:
-                    return "%s @'%s'" % (op, self.cleanValue(val))
-                return "%s '%s'" % (op, self.cleanValue(val))
-            elif "\\" in val:
-                return "%s @'%s'" % (op, self.cleanValue(val))
-        return "%s \"%s\"" % (op, self.cleanValue(val))
+        try:
+            # Check whether the input is a valid regex. If this raises an error we know we can
+            # treat it as a normal value. Otherwise, we'll assume it's a regex unless it matches
+            # common conditions that shouldn't be regexes.
+            re.compile(val)
+
+            # If the value doesn't contain any special characters it shouldn't need to be a regex
+            if re.match(r'[^\w\s]', val) is None:
+                return self.non_regex_value_mapping(val)
+
+            # `abc*` is a valid regexp but the language spec treats this as `endswith`
+            if re.match(r'.*[^\.]\*$', val) is not None:
+                return self.non_regex_value_mapping(val)
+
+            # TODO: There are probably more scenarios we need to account for here...
+
+            return f'matches regex @"{val}"'
+        except re.error:
+            return self.non_regex_value_mapping(val)
+
+    def non_regex_value_mapping(self, val):
+        op = '=='
+        if val.startswith('*'):
+            if val.endswith('*'):
+                op = 'contains'
+            else:
+                op = 'endswith'
+        elif val.endswith('*'):
+            op = 'startswith'
+
+        val = re.sub(r'(^\*|\*$)', '', val)
+
+        return f'{op} "{val}"'
+
 
     def getTable(self, sigmaparser):
         if self.category == "process_creation" and len(set(sigmaparser.values.keys()) - {"Image", "ParentImage",
@@ -145,7 +155,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
             self.table = "SecurityEvent"
         elif self.service and self.service.lower() == "sysmon":
             self.table = "SysmonEvent"
-        elif self.service and self.service.lower() == "powershell":
+        elif self.service and self.service.lower().startswith("powershell"):
             self.table = "Event"
         elif self.service and self.service.lower() == "office365":
             self.table = "OfficeActivity"
@@ -228,10 +238,10 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
             return "(" + self.generateORNode(
                     [(key, v) for v in value]
                     ) + ")"
-        elif key == "EventID":            # EventIDs are not reflected in condition but in table selection
+        elif key.lower() in ['eventid', 'event_id']:            # EventIDs are not reflected in condition but in table selection
             if self.service == "sysmon":
                 self.table = "SysmonEvent"
-                self.eventid = value
+                self.eventid = str(value)
             elif self.service == "powershell":
                 self.table = "Event"
             elif self.service == "security":
