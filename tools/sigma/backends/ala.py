@@ -339,8 +339,20 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         )
 
     def generate_keyword_expression(self, val):
-        val = re.sub(r'(^\*|\*$)', '', val)
-        return f'* contains @"{val}"'
+        val = self.default_value_mapping(val)
+
+        # Check if the keyword expression has a wildcard in the interior of the string.
+        # In this case, the KQL will need to use regex and the rest of the string needs to be escaped.
+        if '*' in val[1:-1]:
+            val = re.sub(r'(==|contains)', 'matches regex', val)
+            val = re.sub(r'([\\\^\$\.\|\?\(\)\[\{])', r'\\\1', val)
+            val = re.sub(r'\*', '.*', val)
+
+        # Most rules that don't explicitly specify wildcards that would have been caught by the
+        # previous run through `self.default_value_mapping` assume a string wrapped in wildcards
+        val = re.sub(r'==', 'contains', val)
+
+        return f'* {val}'
 
     def generateNode(self, node):
         if self._is_keywords_detection == True and type(node) == str:

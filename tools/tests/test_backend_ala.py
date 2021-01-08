@@ -85,3 +85,89 @@ def test_typed_node_keywords(backend, sigmaconfig):
     parser = SigmaParser(rule, sigmaconfig)
     result = backend.generate(parser)
     assert result == 'Test | where (* contains @"TEST_KEYWORD_1" or * contains @"TEST_KEYWORD_2")'
+
+
+def test_type_node_single_keyword(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test',
+        },
+        'detection': {
+            'keywords': [
+                '*TEST_KEYWORD_1*',
+            ],
+            'condition': 'keywords'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where * contains @"TEST_KEYWORD_1"'
+
+
+def test_type_node_keyword_internal_wildcard(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test',
+        },
+        'detection': {
+            'keywords': [
+                'rm * .bash-history',
+            ],
+            'condition': 'keywords'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where * matches regex @"rm .* \\.bash-history"'
+
+
+def test_type_node_keyword_multiple_internal_wildcard(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test',
+        },
+        'detection': {
+            'keywords': [
+                '*TEST_KEYWORD_1*',
+                'rm * .bash-history'
+            ],
+            'condition': 'keywords'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where (* contains @"TEST_KEYWORD_1" or * matches regex @"rm .* \\.bash-history")'
+
+
+def test_type_node_keyword_starts_with(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test',
+        },
+        'detection': {
+            'keywords': [
+                'TEST_KEYWORD*',
+            ],
+            'condition': 'keywords'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where * startswith @"TEST_KEYWORD"'
+
+
+def test_type_node_keyword_starts_with(backend, sigmaconfig):
+    rule = {
+        'logsource': {
+            'product': 'test',
+        },
+        'detection': {
+            'keywords': [
+                '*TEST_KEYWORD',
+            ],
+            'condition': 'keywords'
+        }
+    }
+    parser = SigmaParser(rule, sigmaconfig)
+    result = backend.generate(parser)
+    assert result == 'Test | where * endswith @"TEST_KEYWORD"'
