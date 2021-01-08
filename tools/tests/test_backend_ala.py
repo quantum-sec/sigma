@@ -70,10 +70,21 @@ def test_typed_node_simple_regex(backend):
 
 
 def test_default_value_mapping_escape_quotes(backend):
-    """Should return a simple `contains` KQL condition."""
     val = 'FOO="BAR"'
     result = backend.default_value_mapping(val)
     assert result == '== @"FOO=""BAR"""'
+
+
+def test_default_value_mapping_file_path_only(backend):
+    val = '/usr/bin/env bash'
+    result = backend.default_value_mapping(val)
+    assert result == '== @"/usr/bin/env bash"'
+
+
+def test_default_value_mapping_file_path_and_other(backend):
+    val = '(/bin/bash|/usr/bin/env bash)'
+    result = backend.default_value_mapping(val)
+    assert result == 'matches regex @"(/bin/bash|/usr/bin/env bash)"'
 
 
 def test_typed_node_keywords(backend, sigmaconfig):

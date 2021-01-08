@@ -119,7 +119,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
             re.compile(val)
 
             # If the value doesn't contain any special characters it shouldn't need to be a regex
-            if re.match(r'[^\w\s]', val) is None:
+            if re.match(r'[^\w\s\/]', val) is None:
                 return self.non_regex_value_mapping(val)
 
             # `abc*` is a valid regexp but the language spec treats this as `endswith`
