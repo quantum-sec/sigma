@@ -23,7 +23,7 @@ import xml.etree.ElementTree as xml
 from sigma.config.mapping import (
     SimpleFieldMapping, MultiFieldMapping, ConditionalFieldMapping
 )
-from sigma.parser.condition import SigmaAggregationParser
+from sigma.parser.condition import SigmaAggregationParser, ConditionOR
 
 from sigma.parser.modifiers.type import SigmaRegularExpressionModifier
 from sigma.backends.base import SingleTextQueryBackend
@@ -211,7 +211,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
         if self.table is None:
             self.getTable(sigmaparser)
 
-        if detection.get('condition') == 'keywords':
+        if detection['condition'].startswith('keyword'):
             self._is_keywords_detection = True
 
         return super().generate(sigmaparser)
@@ -338,14 +338,19 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
             )
         )
 
+    def generate_keyword_expression(self, val):
+        val = re.sub(r'(^\*|\*$)', '', val)
+        return f'* contains @"{val}"'
+
+    def generateNode(self, node):
+        if self._is_keywords_detection == True and type(node) == str:
+            return self.generate_keyword_expression(node)
+
+        return super().generateNode(node)
+
     def generateORNode(self, node):
         generated = [ self.generateNode(val) for val in node ]
         filtered = [ g for g in generated if g is not None]
-
-        if self._is_keywords_detection == True:
-            filtered = [ re.sub(r'["*]+', '*', f) for f in filtered]
-            filtered = [ f'* {self.non_regex_value_mapping(f)}' for f in filtered ]
-
         if filtered:
             if self.sort_condition_lists:
                 filtered = sorted(filtered)
