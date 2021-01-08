@@ -48,7 +48,6 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
     )
     config_required = False
 
-    reEscape = re.compile('(\\\|"|(?<!)(?![*?]))')
     andToken = " and "
     orToken = " or "
     notToken = "not "
@@ -126,7 +125,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
             # TODO: There are probably more scenarios we need to account for here...
 
             return f'matches regex @"{val}"'
-        except:
+        except re.error:
             return self.non_regex_value_mapping(val)
 
     def non_regex_value_mapping(self, val):
