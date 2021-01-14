@@ -150,7 +150,7 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
     def getTable(self, sigmaparser):
         if self.category == "process_creation" and len(set(sigmaparser.values.keys()) - {"Image", "ParentImage",
                                                                                          "CommandLine"}) == 0:
-            self.table = "SecurityEvent | where EventID == 4688 "
+            self.table = "SecurityEvent | where event_id == 4688 "
             self.eventid = "4688"
         elif self.category == "process_creation":
             self.table = "SysmonEvent"
@@ -258,6 +258,8 @@ class AzureLogAnalyticsBackend(SingleTextQueryBackend):
                 self.table = "SecurityEvent"
             elif self.service == "system":
                 self.table = "Event"
+            elif self.service == "powershell/operational":
+                self.table = "SecurityEvent"
             return self.mapExpression % (key, value)
         elif type(value) in [SigmaTypeModifier, SigmaContainsModifier, SigmaRegularExpressionModifier, SigmaStartswithModifier, SigmaEndswithModifier]:
             return self.generateMapItemTypedNode(key, value)
