@@ -3,7 +3,7 @@ order: 20
 backends:
   - es-qs
   - es-dsl
-  - elasticsearch-rule
+  - es-rule
   - kibana
   - kibana-ndjson
   - xpack-watcher
@@ -56,7 +56,6 @@ fieldmappings:
   qclass: dns.qclass
   qtype_name: dns.question.type
   qtype: dns.qtype
-  query: dns.question.name
   #question_length: labels.dns.query_length
   RA: dns.RA
   rcode_name: dns.response_code

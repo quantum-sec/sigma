@@ -37,7 +37,6 @@ fieldmappings:
   c-uri-stem: url.original
   c-uri: url.original
   c-useragent: user_agent.original
-  cs-bytes: http.request.body.bytes
   cs-cookie: http.cookie
   cs-host:
     - url.domain
@@ -120,7 +119,7 @@ fieldmappings:
     - url.registered_domain
     - destination.registered_domain
   post_url_parameter: url.original
-  Request Url: url.original
+  Request_Url: url.original
   request_url: url.original
   request_URL: url.original
   RequestUrl: url.original

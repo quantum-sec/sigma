@@ -16,5 +16,8 @@ detection:
         - 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
     condition: keywords
 falsepositives:
-    - Unkown
+    - Unknown
 level: high
+tags:
+    - attack.t1068
+    - attack.privilege_escalation

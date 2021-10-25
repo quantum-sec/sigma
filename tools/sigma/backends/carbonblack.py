@@ -81,6 +81,7 @@ class CarbonBlackQueryBackend(CarbonBlackWildcardHandlingMixin, SingleTextQueryB
         '|',
         ';',
         ':',
+        '-'
     ]
 
     def __init__(self, *args, **kwargs):
@@ -109,12 +110,20 @@ class CarbonBlackQueryBackend(CarbonBlackWildcardHandlingMixin, SingleTextQueryB
     def cleanWhitespace(self, val):
         val = val.replace('*', ' AND ').replace('  ', ' ')
         if re.match('\S+ \S', val):
-            matchs = re.findall('(?:^|\(| )(.+?)(?:\)| OR| AND|$)', val)
-            for strMatch in matchs:
+            matches = re.findall('(?:^|\(| )(.+?)(?:\)| OR| AND|$)', val)
+            for strMatch in matches:
                 if re.match('\S+ \S', strMatch):
                     strUnescapeMatch = self.unescapeCharacter(strMatch)
                     val = val.replace(strMatch, '"{}"'.format(strUnescapeMatch))
         return val.strip()
+    
+    def fixWildcards(self, val):
+        # prob a better way to do this with SigmaStartswithModifier/SigmaEndswithModifier? idk, fail fast!
+        if val.endswith("\\\\"):
+            val = val[:-1] + "*"
+        if val.startswith("\\\\") and not val.startswith("\\\\\\\\"):
+            val = val[2:]
+        return val
 
     def cleanValue(self, val):
         if "[1 to *]" in val:
@@ -128,6 +137,7 @@ class CarbonBlackQueryBackend(CarbonBlackWildcardHandlingMixin, SingleTextQueryB
             val = self.cleanLeading(val)
             val = self.escapeCharacter(val)
             val = self.cleanWhitespace(val)
+            val = self.fixWildcards(val)
         return val
 
     def cleanIPRange(self, value):
@@ -156,6 +166,7 @@ class CarbonBlackQueryBackend(CarbonBlackWildcardHandlingMixin, SingleTextQueryB
 
     def generateMapItemNode(self, node):
         fieldname, value = node
+        value = str(value)
         if fieldname == "EventID" and (type(value) is str or type(value) is int):
             fieldname = self.generateEventKey(value)
             value = self.generateEventValue(value)
