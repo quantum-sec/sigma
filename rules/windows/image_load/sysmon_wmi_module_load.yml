@@ -3,10 +3,10 @@ id: 671bb7e3-a020-4824-a00e-2ee5b55f385e
 description: Detects non wmiprvse loading WMI modules
 status: experimental
 date: 2019/08/10
-modified: 2019/11/10
+modified: 2021/11/20
 author: Roberto Rodriguez @Cyb3rWard0g
 references:
-    - https://github.com/Cyb3rWard0g/ThreatHunter-Playbook/tree/master/playbooks/windows/02_execution/T1047_windows_management_instrumentation/wmi_wmi_module_load.md
+    - https://threathunterplaybook.com/notebooks/windows/02_execution/WIN-190811201010.html
 tags:
     - attack.execution
     - attack.t1047
@@ -27,8 +27,8 @@ detection:
             - '\fastprox.dll'
     filter:
         Image|endswith:
-            - '\WmiPrvSe.exe'
-            - '\WmiAPsrv.exe'
+            - '\WmiPrvSE.exe'
+            - '\WmiApSrv.exe'
             - '\svchost.exe'
             - '\DeviceCensus.exe'
             - '\CompatTelRunner.exe'
@@ -37,7 +37,19 @@ detection:
             - '\ngentask.exe'  # c:\Windows\Microsoft.NET\Framework(64)\ngentask.exe
             - '\windows\system32\taskhostw.exe'  # c:\windows\system32\taskhostw.exe
             - '\windows\system32\MoUsoCoreWorker.exe'  # c:\windows\System32\MoUsoCoreWorker.exe on win10 20H04 at least
-    condition: selection and not filter
+            - '\windows\system32\wbem\WMIADAP.exe'  # https://github.com/SigmaHQ/sigma/issues/1871
+            - 'C:\Windows\Sysmon64.exe'
+            - 'C:\Windows\Sysmon.exe'
+            - 'C:\Windows\System32\wbem\unsecapp.exe'
+            - '\logman.exe'
+            - '\systeminfo.exe'
+            - '\nvcontainer.exe'
+            - 'C:\Windows\System32\wbem\WMIC.exe'
+    filter_generic:             # rule caused many false positives in different productive environments - using this filter to exclude all programs that run from folders that only the administrative groups should have access to
+        Image|startswith:
+            - 'C:\Program Files\'
+            - 'C:\Program Files (x86)\'
+    condition: selection and not filter and not filter_generic
 fields:
     - ComputerName
     - User
@@ -45,5 +57,5 @@ fields:
     - ImageLoaded
 falsepositives:
     - Unknown
-level: high
+level: medium
 

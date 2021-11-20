@@ -13,11 +13,11 @@ logsource:
 detection:
     selection:
         uri_query|contains:
-            - '*cmd=read*'
-            - '*connect&target*'
-            - '*cmd=connect*'
-            - '*cmd=disconnect*'
-            - '*cmd=forward*'
+            - 'cmd=read'
+            - 'connect&target'
+            - 'cmd=connect'
+            - 'cmd=disconnect'
+            - 'cmd=forward'
     filter:
         referer: null
         useragent: null
@@ -33,5 +33,5 @@ falsepositives:
 level: high
 tags:
     - attack.persistence
-    - attack.t1100
+    - attack.t1100 # an old one
     - attack.t1505.003
